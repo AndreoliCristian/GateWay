@@ -1,17 +1,16 @@
 package com.example.gateway;
 
 import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
@@ -23,6 +22,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
     private ExpandableListView mBlePeripheralsListView;
     private TextView mPeripheralsListEmptyTV;
     private BleGattProfileListAdapter mBlePeripheralsListAdapter;
+
+    private GestioneDB db;
 
     //mio debug
     private TextView textView;
@@ -155,12 +157,12 @@ public class MainActivity extends AppCompatActivity {
                     blePeripheral.setDeviceId(groupPosition);
                     listaSensori.put(groupPosition,blePeripheral);
                 }
-                Log.e(TAG,"NUOVAVISTA =  "+listaSensori.get(groupPosition).getNuovavista());
-                if(listaSensori.get(groupPosition).getNuovavista() == null){
+                Log.e(TAG,"NUOVAVISTA =  "+listaSensori.get(groupPosition).getVistaPadre());
+                if(listaSensori.get(groupPosition).getVistaPadre() == null){
                     View listItem;
                     listItem = parent.getChildAt(groupPosition);
                     Log.e(TAG,"TAG =  "+listItem.getTag().toString());
-                    listaSensori.get(groupPosition).setNuovavista((BleGattProfileListAdapter.GroupViewHolder) listItem.getTag());
+                    listaSensori.get(groupPosition).setVistaPadre((BleGattProfileListAdapter.GroupViewHolder) listItem.getTag());
                 }
                 //parente = parent;
                 return false;
@@ -168,6 +170,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }*/
+
+    public ImageView green;
+    Activity a;
 
 
     //---------------------------------------------------------------------------------------------------------------------------------------
@@ -186,12 +191,23 @@ public class MainActivity extends AppCompatActivity {
         //textView.setMovementMethod(new ScrollingMovementMethod());
 
         //attachCallbacks();
+
+        db = new GestioneDB(this);
+        db.open();
+
+        //green = (ImageView)findViewById(R.id.green_red_light);
+        //green.setColorFilter(Color.argb(1, 255, 0, 0));
+        //green.setVisibility(View.INVISIBLE);
+        //green.setColorFilter(5);
+        //listaSensori.get(0).getVistaFiglia().statusLed.setColorFilter(Color.argb(1, 255, 0, 0));
+
+        a = MainActivity.this;
     }
 
     private void inizializzaUI(){
         mPeripheralsListEmptyTV = (TextView)findViewById(R.id.peripheral_list_empty);
         mBlePeripheralsListView = (ExpandableListView) findViewById(R.id.peripherals_list);
-        mBlePeripheralsListAdapter = new BleGattProfileListAdapter(listaSensori);
+        mBlePeripheralsListAdapter = new BleGattProfileListAdapter(listaSensori, getApplicationContext());
         mBlePeripheralsListView.setAdapter(mBlePeripheralsListAdapter);
         mBlePeripheralsListView.setEmptyView(mPeripheralsListEmptyTV);
     }
@@ -224,7 +240,9 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         mStartScanItem = menu.findItem(R.id.action_start_scan);
         mStopScanItem =	 menu.findItem(R.id.action_stop_scan);
+        mStopScanItem.setVisible(false);
         mScanProgressSpinner = menu.findItem(R.id.scan_progress_item);
+        mScanProgressSpinner.setVisible(false);
         return	true;
 
     }
@@ -339,9 +357,10 @@ public class MainActivity extends AppCompatActivity {
 
 
             if(listaSensori.get(count) == null){
-                BlePeripheral blePeripheral = new BlePeripheral(disposit.get(count), getApplicationContext());
+                BlePeripheral blePeripheral = new BlePeripheral(disposit.get(count), getApplicationContext(), db, a);
                 blePeripheral.setDeviceId(count);
                 listaSensori.put(count,blePeripheral);
+                listaSensori.get(count).setSerial(bluetoothDevice.getName());
             }
             count = count + 1;
 

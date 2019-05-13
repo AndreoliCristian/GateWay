@@ -1,6 +1,8 @@
 package com.example.gateway.adapters;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -9,8 +11,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.gateway.R;
 import com.example.gateway.ble.BlePeripheral;
@@ -29,9 +35,11 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
     private ArrayList<BlePeripheralListItem> mBluetoothPeripheralListItems = new ArrayList<BlePeripheralListItem>(); // list of Peripherals
     private Map<Integer,ArrayList<DeviceConfig>> mDeviceConfig = new HashMap<Integer, ArrayList<DeviceConfig>>();
     private DeviceConfig options;
+    private Context context;
 
-    public BleGattProfileListAdapter(Map<Integer, BlePeripheral> listaSensori) {
+    public BleGattProfileListAdapter(Map<Integer, BlePeripheral> listaSensori, Context context) {
         this.listaSensori = listaSensori;
+        this.context = context;
     }
 
     public void addBluetoothPeripheral(BluetoothDevice bluetoothDevice){
@@ -77,11 +85,12 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         public TextView deviceName;
         public TextView deviceMac;
         public TextView etichetta_connection_status;
-        public TextView connection_Status;
-        public TextView etichetta_batteryLevel;
-        public TextView batteryLevel;
+        public ImageView connection_Status;
+        //public TextView etichetta_batteryLevel;
+        //public TextView batteryLevel;
+        public ImageView battery;
         public TextView etichetta_indossato;
-        public TextView indossato;
+        public ImageView indossato;
         public TextView etichetta_fall;
         public TextView fall;
     }
@@ -107,12 +116,15 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             peripheralListItemView = new GroupViewHolder();
             peripheralListItemView.deviceName = (TextView)v.findViewById(R.id.advertise_name);
             peripheralListItemView.deviceMac = (TextView)v.findViewById(R.id.mac_address);
-            peripheralListItemView.etichetta_batteryLevel = (TextView)v.findViewById(R.id.etichetta_batteryLevel);
-            peripheralListItemView.batteryLevel = (TextView)v.findViewById(R.id.batteryLevel);
+            //peripheralListItemView.etichetta_batteryLevel = (TextView)v.findViewById(R.id.etichetta_batteryLevel);
+            //peripheralListItemView.batteryLevel = (TextView)v.findViewById(R.id.batteryLevel);
+            peripheralListItemView.battery = (ImageView)v.findViewById(R.id.batt);
+            //Drawable d = context.getDrawable(R.mipmap.battery_charge_100);
+            //peripheralListItemView.battery.setImageDrawable(d);
             peripheralListItemView.etichetta_connection_status = (TextView)v.findViewById(R.id.etichetta_status);
-            peripheralListItemView.connection_Status = (TextView)v.findViewById(R.id.status);
+            peripheralListItemView.connection_Status = (ImageView)v.findViewById(R.id.status);
             peripheralListItemView.etichetta_indossato = (TextView)v.findViewById(R.id.etichetta_indossato);
-            peripheralListItemView.indossato = (TextView)v.findViewById(R.id.indossato);
+            peripheralListItemView.indossato = (ImageView)v.findViewById(R.id.indossato);
             peripheralListItemView.etichetta_fall = (TextView)v.findViewById(R.id.etichetta_fall);
             peripheralListItemView.fall = (TextView)v.findViewById(R.id.fall);
             v.setTag(peripheralListItemView);
@@ -130,7 +142,7 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             BlePeripheralListItem item = mBluetoothPeripheralListItems.get(groupPosition);
             peripheralListItemView.deviceName.setText(item.getDeviceName());
             peripheralListItemView.deviceMac.setText(item.getDeviceMac());
-            peripheralListItemView.etichetta_batteryLevel.setText("Batt");
+            //peripheralListItemView.etichetta_batteryLevel.setText("Batt");
             //peripheralListItemView.batteryLevel.setText("100%");
             //peripheralListItemView.etichetta_connection_status.setText("Status");
             //peripheralListItemView.connection_Status.setText("NO");
@@ -140,8 +152,8 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             //peripheralListItemView.fall.setText("100%");
         }
 
-        if(listaSensori.get(groupPosition).getNuovavista() == null) {
-            listaSensori.get(groupPosition).setNuovavista(peripheralListItemView);
+        if(listaSensori.get(groupPosition).getVistaPadre() == null) {
+            listaSensori.get(groupPosition).setVistaPadre(peripheralListItemView);
         }
         //listaSensori.get(groupPosition).setV(v);
         return	v;
@@ -177,11 +189,18 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         //public View progressSpinner;
         public Button disconnect;
         public Button options;
+        public ImageView statusLed;
+        public ImageView wearLed;
+        public ProgressBar charge;
+        public EditText editThreshold;
+        public Button sendThreshold;
+        public Button offlineRecording;
+        public Button streamRecording;
     }
     @Override
     public View getChildView(final int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
         View v = convertView;
-        ChildViewHolder holder;
+        final ChildViewHolder holder;
         if(convertView == null){
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
             v = inflater.inflate(R.layout.device_config,null);
@@ -191,6 +210,16 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             //holder.progressSpinner = (View)v.findFocus(R.id.scan_progress_item);
             holder.disconnect = (Button)v.findViewById(R.id.disconnect);
             holder.options = (Button)v.findViewById(R.id.options);
+            holder.statusLed = (ImageView)v.findViewById(R.id.status);
+            holder.charge = (ProgressBar) v.findViewById(R.id.charge);
+            holder.editThreshold = (EditText)v.findViewById(R.id.editThreshold);
+            holder.sendThreshold = (Button)v.findViewById(R.id.send_threshold);
+            holder.offlineRecording = (Button)v.findViewById(R.id.offline_recording);
+            holder.streamRecording = (Button)v.findViewById(R.id.stream_recording);
+            //holder.charge.getIndeterminateDrawable().setColorFilter(0xFFFF0000,android.graphics.PorterDuff.Mode.MULTIPLY);
+            Drawable d = context.getDrawable(R.drawable.progress);
+            holder.charge.setProgressDrawable(d);
+            //holder.charge.setProgressTintMode(android.graphics.PorterDuff.Mode.MULTIPLY);
             v.setTag(holder);
         }
         else {
@@ -212,10 +241,43 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
                 try {
                     listaSensori.get(groupPosition).disconnect();
                 } catch (Exception e){
-                    Log.e(TAG,"Error connecting to peripheral");
+                    Log.e(TAG,"Error disconnecting to peripheral");
                 }
             }
         });
+        holder.options.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            }
+        });
+        holder.sendThreshold.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int percentage = Integer.parseInt(holder.editThreshold.getText().toString());
+                if(percentage<=100 && percentage >=0) {
+                    listaSensori.get(groupPosition).updateThreshold(percentage);
+                }else {
+                    Toast.makeText(context, "Inserire un numero tra 0 e 100", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        holder.offlineRecording.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                listaSensori.get(groupPosition).startOfflineRecording();
+            }
+        });
+        holder.streamRecording.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                listaSensori.get(groupPosition).startStreamRecording();
+            }
+        });
+
+        if(listaSensori.get(groupPosition).getVistaFiglia() == null) {
+            listaSensori.get(groupPosition).setVistaFiglia(holder);
+        }
+
         return v;
     }
 

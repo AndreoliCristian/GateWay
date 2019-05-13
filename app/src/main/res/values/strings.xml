@@ -16,4 +16,11 @@
     <string name="Percentuale">100%</string>
     <string name="NO">NO</string>
     <string	name="peripheral_list_empty">No	Peripherals	Found</string>
+    <string name="battery_charge">BATTERY CHARGE</string>
+    <string name="STATUS">STATUS</string>
+    <string name="WEAR">WEAR</string>
+    <string name="THRESHOLD">THRESHOLD</string>
+    <string name="SEND">SEND</string>
+    <string name="OFFREC">OFFREC</string>
+    <string name="STREAMREC">STREAMREC</string>
 </resources>
