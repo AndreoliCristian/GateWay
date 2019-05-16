@@ -17,11 +17,9 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.example.gateway.R;
 import com.example.gateway.ble.BlePeripheral;
 import com.example.gateway.models.BlePeripheralListItem;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +29,7 @@ import static android.content.ContentValues.TAG;
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 
 public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
-    private final static String TAF = BleGattProfileListAdapter.class.getSimpleName();
+    private final static String TAG = BleGattProfileListAdapter.class.getSimpleName();
     private ArrayList<BlePeripheralListItem> mBluetoothPeripheralListItems = new ArrayList<BlePeripheralListItem>(); // list of Peripherals
     private Map<Integer,ArrayList<DeviceConfig>> mDeviceConfig = new HashMap<Integer, ArrayList<DeviceConfig>>();
     private DeviceConfig options;
@@ -86,8 +84,6 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         public TextView deviceMac;
         public TextView etichetta_connection_status;
         public ImageView connection_Status;
-        //public TextView etichetta_batteryLevel;
-        //public TextView batteryLevel;
         public ImageView battery;
         public TextView etichetta_indossato;
         public ImageView indossato;
@@ -97,12 +93,6 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
 
     @Override
     public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-        //MIE PROVE
-        //----------------------------
-        //listaSensori.get(groupPosition).setV(parent);
-        //----------------------------
-
-
 
         View v = convertView;
         GroupViewHolder peripheralListItemView;
@@ -116,11 +106,7 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             peripheralListItemView = new GroupViewHolder();
             peripheralListItemView.deviceName = (TextView)v.findViewById(R.id.advertise_name);
             peripheralListItemView.deviceMac = (TextView)v.findViewById(R.id.mac_address);
-            //peripheralListItemView.etichetta_batteryLevel = (TextView)v.findViewById(R.id.etichetta_batteryLevel);
-            //peripheralListItemView.batteryLevel = (TextView)v.findViewById(R.id.batteryLevel);
             peripheralListItemView.battery = (ImageView)v.findViewById(R.id.batt);
-            //Drawable d = context.getDrawable(R.mipmap.battery_charge_100);
-            //peripheralListItemView.battery.setImageDrawable(d);
             peripheralListItemView.etichetta_connection_status = (TextView)v.findViewById(R.id.etichetta_status);
             peripheralListItemView.connection_Status = (ImageView)v.findViewById(R.id.status);
             peripheralListItemView.etichetta_indossato = (TextView)v.findViewById(R.id.etichetta_indossato);
@@ -142,20 +128,11 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             BlePeripheralListItem item = mBluetoothPeripheralListItems.get(groupPosition);
             peripheralListItemView.deviceName.setText(item.getDeviceName());
             peripheralListItemView.deviceMac.setText(item.getDeviceMac());
-            //peripheralListItemView.etichetta_batteryLevel.setText("Batt");
-            //peripheralListItemView.batteryLevel.setText("100%");
-            //peripheralListItemView.etichetta_connection_status.setText("Status");
-            //peripheralListItemView.connection_Status.setText("NO");
-            //peripheralListItemView.etichetta_indossato.setText("Wear");
-            //peripheralListItemView.indossato.setText("NO");
-            //peripheralListItemView.etichetta_fall.setText("Fall");
-            //peripheralListItemView.fall.setText("100%");
         }
 
         if(listaSensori.get(groupPosition).getVistaPadre() == null) {
             listaSensori.get(groupPosition).setVistaPadre(peripheralListItemView);
         }
-        //listaSensori.get(groupPosition).setV(v);
         return	v;
     }
 
@@ -211,15 +188,14 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             holder.disconnect = (Button)v.findViewById(R.id.disconnect);
             holder.options = (Button)v.findViewById(R.id.options);
             holder.statusLed = (ImageView)v.findViewById(R.id.status);
+            holder.wearLed = (ImageView)v.findViewById(R.id.wear_led);
             holder.charge = (ProgressBar) v.findViewById(R.id.charge);
             holder.editThreshold = (EditText)v.findViewById(R.id.editThreshold);
             holder.sendThreshold = (Button)v.findViewById(R.id.send_threshold);
             holder.offlineRecording = (Button)v.findViewById(R.id.offline_recording);
             holder.streamRecording = (Button)v.findViewById(R.id.stream_recording);
-            //holder.charge.getIndeterminateDrawable().setColorFilter(0xFFFF0000,android.graphics.PorterDuff.Mode.MULTIPLY);
             Drawable d = context.getDrawable(R.drawable.progress);
             holder.charge.setProgressDrawable(d);
-            //holder.charge.setProgressTintMode(android.graphics.PorterDuff.Mode.MULTIPLY);
             v.setTag(holder);
         }
         else {
@@ -289,8 +265,4 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
     }
 
     public Map<Integer, BlePeripheral> listaSensori;
-
-    public void connect(BluetoothDevice bluetoothDevice){
-
-    }
 }

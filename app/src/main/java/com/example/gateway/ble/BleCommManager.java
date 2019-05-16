@@ -8,12 +8,9 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.RequiresApi;
-
 import com.example.gateway.ble.callbacks.BleScanCallbackv18;
 import com.example.gateway.ble.callbacks.BleScanCallbackv21;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;

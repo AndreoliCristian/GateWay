@@ -21,6 +21,6 @@
     <string name="WEAR">WEAR</string>
     <string name="THRESHOLD">THRESHOLD</string>
     <string name="SEND">SEND</string>
-    <string name="OFFREC">OFFREC</string>
-    <string name="STREAMREC">STREAMREC</string>
+    <string name="OFFREC">OFFLINERECORDING</string>
+    <string name="STREAMREC">STREAMRECORDING</string>
 </resources>

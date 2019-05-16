@@ -1,7 +1,6 @@
 package com.example.gateway.models;
 
 import android.bluetooth.BluetoothDevice;
-import android.view.View;
 
 public class BlePeripheralListItem {
     private int ItemId;

@@ -17,11 +17,9 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.example.gateway.GestioneDB;
 import com.example.gateway.R;
 import com.example.gateway.adapters.BleGattProfileListAdapter;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -47,13 +45,19 @@ public class BlePeripheral extends Activity {
     private static final UUID PosturalMonitor_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000"); //Caratteristica
     private static final UUID Thresholds_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000"); //Caratteristica
     private static final UUID Status_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000"); //Caratteristica
-    private final static int errorBit = 1;
-    private final static int wearBit = 0;
+    private final static int errorBit = 1; //Bit numero N della caratteristica status che indica un malfunzionamento hardware
+    private final static int wearBit = 0; //Bit numero N della caratteristica status che indica se il sensore è indossato o meno
+    private final static int offlineRecordingBit = 2; //Bit numero N della caratteristica status che indica se la SensorTile debba o meno registrare sulla SD
+    private final static int streamRecordingBit = 3; //Bit numero N della caratteristica status che indica se lo streaming dei dati è attivo
 
-    private final static int disconnect = 0;
-    private final static int connect = 1;
-    private final static int offlineRecording = 2;
-    private final static int streamRecording = 3;
+    //Tipi di dati da inviare al Cloud
+    private final static int type_Connected = 0;
+    private final static int type_Disconnected = 0;
+    private final static int type_Battery = 0;
+    private final static int type_Fall = 0;
+    private final static int type_Warning = 0;
+    private final static int type_Wear = 0;
+
 
 
     private final Drawable battery_charge_25;
@@ -73,10 +77,12 @@ public class BlePeripheral extends Activity {
     private BluetoothDevice mBluetoothDevice;
     private BluetoothGatt mBluetoothGatt;
     private boolean isConnected;
-    public int fallPercentage;
-    public int warningPercentage;
-    public boolean offRec = false;
-    public boolean strRec = false;
+    private int fallPercentage;
+    private int warningPercentage;
+    private boolean offRec = false;
+    private boolean strRec = false;
+    private AlertDialog.Builder alertDialog;
+    private AlertDialog dialog;
     public Context context;
     GestioneDB db;
     Activity a;
@@ -121,14 +127,11 @@ public class BlePeripheral extends Activity {
             wr.write(json);
             wr.flush();
 
-            Log.e(TAG,"PROVAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-
             reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder sb = new StringBuilder();
             String line = null;
             while((line = reader.readLine()) != null)
             {
-                // Append server response in string
                 sb.append(line + "\n");
             }
             text = sb.toString();
@@ -145,13 +148,11 @@ public class BlePeripheral extends Activity {
                 Log.v(TAG, "Connected to peripheral");
                 isConnected = true;
                 onBleConnected();
-                sendJson(serial,gateway,connect,"true");
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 disconnect();
                 isConnected = false;
                 onBleDisconnected();
-                //sendJson(serial,gateway,disconnect,"true");
                 close();
 
                 //QUI POTREI AGGIUNGERE UN POSSIBILE CICLO WHILE CHE IN CASO DI DISCONNESSIONE PROVI A RICONNETTERSI ALL'INFINITO, EVENTUALE RIFLESSIONE (SUONO, LUCI, ETC.) SULLA UI
@@ -196,15 +197,17 @@ public class BlePeripheral extends Activity {
                 byte[] data	= characteristic.getValue();
                 boolean[] bits = convertToBits(data[0]);
                 updateWear(bits[wearBit]);
-                /*if(bits[wearBit] == true){
-                    updateWear("SI");
-                }
-                else{
-                    updateWear("NO");
-                }*/
-
                 if(bits[errorBit] == true){
+                    Toast.makeText(context, "Malfunzionamento HardWare", Toast.LENGTH_SHORT).show();
                     //QUALCOSA CHE GESTISCA UN MALFUNZIONAMENTO HARDWARE
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            vistaPadre.deviceName.setTextColor(Color.parseColor("#FF0000"));
+                        }
+                    });
+                }else{
+                    vistaPadre.deviceName.setTextColor(Color.parseColor("#000000"));
                 }
 
             }
@@ -225,15 +228,19 @@ public class BlePeripheral extends Activity {
             if(characteristic.toString().equals(Status_UUID)){
                 byte[] data	= characteristic.getValue();
                 boolean[] bits = convertToBits(data[0]);
-                if(bits[offlineRecording]){
+                if(bits[offlineRecordingBit]){
                     offRec = true;
+                    Toast.makeText(context, "OfflineRecording ON", Toast.LENGTH_SHORT).show();
                 }else{
                     offRec = false;
+                    Toast.makeText(context, "OfflineRecording OFF", Toast.LENGTH_SHORT).show();
                 }
-                if(bits[streamRecording]){
+                if(bits[streamRecordingBit]){
                     strRec = true;
+                    Toast.makeText(context, "StreamRecording ON", Toast.LENGTH_SHORT).show();
                 }else{
                     strRec = false;
+                    Toast.makeText(context, "StreamRecording OFF", Toast.LENGTH_SHORT).show();
                 }
             }
             Log.v(TAG, "LA CARATTERISTICA E' STATA SCRITTA CORRETTAMENTE "+ characteristic);
@@ -248,12 +255,11 @@ public class BlePeripheral extends Activity {
         return bits;
     }
 
-    public BluetoothGatt connect(/*BluetoothDevice bluetoothDevice, *//*BluetoothGattCallback callback,*/ final Context context) throws Exception{
+    public BluetoothGatt connect(final Context context) throws Exception{
         if(mBluetoothDevice == null){
             throw  new  Exception("No bluetooth device provided");
         }
         if(!isConnected) {
-            //mBluetoothDevice = bluetoothDevice;
             mBluetoothGatt = mBluetoothDevice.connectGatt(context, false, gattCallback);
         }
         else{
@@ -263,7 +269,8 @@ public class BlePeripheral extends Activity {
     }
 
     public void onBleConnected(){
-        db.putEvent(serial, gateway, connect, "true");
+        db.putEvent(serial, gateway, type_Connected, "true");
+        sendJson(serial, gateway, type_Connected, "true");
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -279,7 +286,8 @@ public class BlePeripheral extends Activity {
     }
 
     public void onBleDisconnected(){
-        db.putEvent(serial, gateway, disconnect, "true");
+        db.putEvent(serial, gateway, type_Disconnected, "true");
+        sendJson(serial, gateway, type_Disconnected, "true");
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -297,10 +305,11 @@ public class BlePeripheral extends Activity {
     }
 
     public void updateBatteryLevel(final int percentage){
+        db.putEvent(serial, gateway, type_Battery, String.valueOf(percentage));
+        sendJson(serial, gateway, type_Battery, String.valueOf(percentage));
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                //vistaPadre.batteryLevel.setText(String.valueOf(percentage));
                 if(percentage<=25){
                     vistaPadre.battery.setImageDrawable(battery_charge_25);
                 }else if (percentage<=50){
@@ -316,18 +325,21 @@ public class BlePeripheral extends Activity {
     }
 
     public void updateFall(final String fall){
+        db.putEvent(serial, gateway, type_Fall, String.valueOf(fall));
+        sendJson(serial, gateway, type_Fall, String.valueOf(fall));
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 vistaPadre.etichetta_fall.setText("Fall");
                 vistaPadre.fall.setText(fall);
-                vistaPadre.deviceName.setTextColor(Color.parseColor("#FF0000"));
+                //vistaPadre.deviceName.setTextColor(Color.parseColor("#FF0000"));
                 if(Integer.parseInt(fall)>fallPercentage) {
+                    dialog.cancel();
                     AlertDialog.Builder alertDialog = new AlertDialog.Builder(a).setTitle("FALL DETECTED").setMessage("SensorTile = " + serial + "\n" + "MAC = " + mBluetoothDevice.getAddress() + "\n" + "PERCENTAGE = " + fall).setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             fallPercentage = 0;
                         }
-                    }).setNegativeButton(android.R.string.no, null).setIcon(android.R.drawable.ic_dialog_alert);
+                    }).setIcon(android.R.drawable.ic_dialog_alert);
                     AlertDialog dialog = alertDialog.create();
                     dialog.show();
                 }
@@ -337,18 +349,21 @@ public class BlePeripheral extends Activity {
     }
 
     public void updateProbability(final String warning){
+        db.putEvent(serial, gateway, type_Warning, String.valueOf(warning));
+        sendJson(serial, gateway, type_Warning, String.valueOf(warning));
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 vistaPadre.etichetta_fall.setText("War");
                 vistaPadre.fall.setText(warning);
-                vistaPadre.deviceName.setTextColor(Color.parseColor("#FF0000"));
+                //vistaPadre.deviceName.setTextColor(Color.parseColor("#FF0000"));
                 if(Integer.parseInt(warning) > warningPercentage) {
+                    dialog.cancel();
                     AlertDialog.Builder alertDialog = new AlertDialog.Builder(a).setTitle("WARNING DETECTED").setMessage("SensorTile = " + serial + "\n" + "MAC = " + mBluetoothDevice.getAddress() + "\n" + "PERCENTAGE = " + warning).setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             warningPercentage = 0;
                         }
-                    }).setNegativeButton(android.R.string.no, null).setIcon(android.R.drawable.ic_dialog_alert);
+                    }).setIcon(android.R.drawable.ic_dialog_alert);
                     AlertDialog dialog = alertDialog.create();
                     dialog.show();
                 }
@@ -358,13 +373,17 @@ public class BlePeripheral extends Activity {
     }
 
     public void updateWear(final boolean bol){
+        db.putEvent(serial, gateway, type_Wear, String.valueOf(bol));
+        sendJson(serial, gateway, type_Wear, String.valueOf(bol));
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if(bol){
                     vistaPadre.indossato.setImageDrawable(green_led);
+                    vistaFiglia.wearLed.setImageDrawable(green_led);
                 }else {
                     vistaPadre.indossato.setImageDrawable(red_led);
+                    vistaFiglia.wearLed.setImageDrawable(red_led);
                 }
             }
         });
@@ -384,10 +403,6 @@ public class BlePeripheral extends Activity {
                 }
             }
         }
-
-        byte[] value = new byte[1];
-        value[0] = (byte) (threshold & 0xFF);
-        Log.v(TAG,"TH   =   "+value[0]);
     }
 
     public void startOfflineRecording(){
@@ -398,7 +413,7 @@ public class BlePeripheral extends Activity {
                 if (charac != null) {
                     int i = charac.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
                     byte[] value = new byte[1];
-                    int bit = 1 << offlineRecording;
+                    int bit = 1 << offlineRecordingBit;
                     byte b= (byte) (i ^ bit);
                     value[0] = (byte) (b);
                     charac.setValue(value);
@@ -416,7 +431,7 @@ public class BlePeripheral extends Activity {
                 if (charac != null) {
                     int i = charac.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
                     byte[] value = new byte[1];
-                    int bit = 1 << streamRecording;
+                    int bit = 1 << streamRecordingBit;
                     byte b= (byte) (i ^ bit);
                     value[0] = (byte) (b);
                     charac.setValue(value);
