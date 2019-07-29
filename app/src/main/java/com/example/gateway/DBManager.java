@@ -10,7 +10,7 @@ import android.util.Log;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-public class GestioneDB {
+public class DBManager {
 
     static final String KEY_SERIAL = "serial";
     static final String KEY_GATEWAY = "gateway";
@@ -18,31 +18,31 @@ public class GestioneDB {
     static final String KEY_TYPE = "type";
     static final String KEY_VALUE = "value";
 
-    static final String TAG = "GestioneDB";
-    static final String DATABASE_NOME = "TestDB";
-    static final String DATABASE_TABELLA = "eventi";
+    static final String TAG = "DBManager";
+    static final String DATABASE_NAME = "TestDB";
+    static final String DATABASE_TABLE = "events";
     static final int DATABASE_VERSIONE = 2;
 
-    static final String DATABASE_CREAZIONE = "CREATE TABLE " + DATABASE_TABELLA + " (date text, serial text not null, gateway text not null, type integer, value text);";
+    static final String DATABASE_CREATION = "CREATE TABLE " + DATABASE_TABLE + " (date text, serial text not null, gateway text not null, type integer, value text);";
 
     final Context context;
     DatabaseHelper DBHelper;
     SQLiteDatabase db;
 
-    public GestioneDB(Context ctx){
+    public DBManager(Context ctx){
         this.context = ctx;
         DBHelper = new DatabaseHelper(context);
     }
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
         DatabaseHelper(Context context){
-            super(context,DATABASE_NOME, null, DATABASE_VERSIONE);
+            super(context, DATABASE_NAME, null, DATABASE_VERSIONE);
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
             try {
-                db.execSQL(DATABASE_CREAZIONE);
+                db.execSQL(DATABASE_CREATION);
             }
             catch (SQLException e) {
                 e.printStackTrace();
@@ -57,7 +57,7 @@ public class GestioneDB {
         }
     }
 
-    public GestioneDB open() throws SQLException{
+    public DBManager open() throws SQLException{
         db = DBHelper.getWritableDatabase();
         return this;
     }
@@ -79,22 +79,22 @@ public class GestioneDB {
         initialValues.put(KEY_GATEWAY, gateway);
         initialValues.put(KEY_TYPE, type);
         initialValues.put(KEY_VALUE, value);
-        Log.e(TAG,String.valueOf(db.insert(DATABASE_TABELLA, null, initialValues)));
-        return db.insert(DATABASE_TABELLA, null, initialValues);
+        Log.e(TAG,String.valueOf(db.insert(DATABASE_TABLE, null, initialValues)));
+        return db.insert(DATABASE_TABLE, null, initialValues);
     }
 
     public boolean deleteEvent(){
         return false;
     }
 
-    public Cursor ottieniEventi(){
-        return db.query(DATABASE_TABELLA, new String[] {KEY_DATE, KEY_SERIAL, KEY_SERIAL, KEY_TYPE, KEY_VALUE}, null, null, null, null, null);
+    public Cursor getEventList(){
+        return db.query(DATABASE_TABLE, new String[] {KEY_DATE, KEY_SERIAL, KEY_SERIAL, KEY_TYPE, KEY_VALUE}, null, null, null, null, null);
     }
 
-    public Cursor ottieniEvento(long rigaId) throws SQLException
+    public Cursor getEvent(long rigaId) throws SQLException
     {
         Cursor mCursore = null;  //riga da eliminare
-        /*Cursor mCursore = db.query(true, DATABASE_TABELLA, new String[] {KEY_DATE, KEY_SERIAL, KEY_SERIAL, KEY_TYPE, KEY_VALUE}, KEY_RIGAID + "=" + rigaId, null, null, null, null, null);
+        /*Cursor mCursore = db.query(true, DATABASE_TABLE, new String[] {KEY_DATE, KEY_SERIAL, KEY_SERIAL, KEY_TYPE, KEY_VALUE}, KEY_RIGAID + "=" + rigaId, null, null, null, null, null);
         if (mCursore != null) {
             mCursore.moveToFirst();
         }*/

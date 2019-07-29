@@ -19,6 +19,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.WindowManager;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int MULTIPLE_PERMISSIONS = 42;
     private final static int REQUEST_ENABLE_BT = 1;
-    private final static int SCAN_PERIOD = 10000;
     private String[] list_of_permissions = new String[] {
             Manifest.permission.BLUETOOTH,
             Manifest.permission.BLUETOOTH_ADMIN,
@@ -54,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
     private ExpandableListView mBlePeripheralsListView;
     private TextView mPeripheralsListEmptyTV;
     private BleGattProfileListAdapter mBlePeripheralsListAdapter;
-    private GestioneDB db;
-    private Map<Integer, BlePeripheral> listaSensori = new HashMap<>();
+    private DBManager db;
+    private Map<Integer, BlePeripheral> sensorList = new HashMap<>();
     private ArrayList<BluetoothDevice> disposit = new ArrayList<>();
     private int count;
     Activity a;
@@ -63,19 +64,36 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
+        this.setFinishOnTouchOutside(false);
+
+        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
+        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH);
         setContentView(R.layout.activity_main);
 
         checkPermissions();
-        inizializzaUI();
-        db = new GestioneDB(this);
+        initUI();
+        db = new DBManager(this);
         db.open();
         a = MainActivity.this;
     }
 
-    private void inizializzaUI(){
+    /*@Override
+    public boolean onTouchEvent(MotionEvent event) {
+        // If we've received a touch notification that the user has touched
+        // outside the app, finish the activity.
+        if (MotionEvent.ACTION_OUTSIDE == event.getAction()) {
+            //finish();
+            return false;
+        }
+
+        // Delegate everything else to Activity.
+        return false;
+    }*/
+
+    private void initUI(){
         mPeripheralsListEmptyTV = (TextView)findViewById(R.id.peripheral_list_empty);
         mBlePeripheralsListView = (ExpandableListView) findViewById(R.id.peripherals_list);
-        mBlePeripheralsListAdapter = new BleGattProfileListAdapter(listaSensori, getApplicationContext());
+        mBlePeripheralsListAdapter = new BleGattProfileListAdapter(sensorList, getApplicationContext());
         mBlePeripheralsListView.setAdapter(mBlePeripheralsListAdapter);
         mBlePeripheralsListView.setEmptyView(mPeripheralsListEmptyTV);
     }
@@ -83,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        inizializzaBluetooth();
+        initBluetooth();
     }
 
     @Override
@@ -137,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void inizializzaBluetooth() {
+    public void initBluetooth() {
         //	notify	when	bluetooth	is	turned	on	or	off
         IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         registerReceiver(mBluetoothAdvertiseReceiver, filter);
@@ -165,15 +183,14 @@ public class MainActivity extends AppCompatActivity {
         mStopScanItem.setVisible(true);
         mScanProgressSpinner.setVisible(true);
         //	clear	the	list	of	Peripherals	and	start	scanning
-        for(int i = 0;i<listaSensori.size();i++){
-            if(listaSensori.get(i).isConnected()){
-                listaSensori.get(i).disconnect();
-
+        for(int i = 0; i< sensorList.size(); i++){
+            if(sensorList.get(i).isConnected()){
+                sensorList.get(i).disconnect();
             }
         }
         mBlePeripheralsListAdapter.clear();
         disposit.clear();
-        listaSensori.clear();
+        sensorList.clear();
         mBlePeripheralsListView.setAdapter(mBlePeripheralsListAdapter);
         try{
             mScanningActive	= true;
@@ -221,11 +238,11 @@ public class MainActivity extends AppCompatActivity {
             disposit.add(bluetoothDevice);
 
 
-            if(listaSensori.get(count) == null){
+            if(sensorList.get(count) == null){
                 BlePeripheral blePeripheral = new BlePeripheral(disposit.get(count), getApplicationContext(), db, a);
                 blePeripheral.setDeviceId(count);
-                listaSensori.put(count,blePeripheral);
-                listaSensori.get(count).setSerial(bluetoothDevice.getName());
+                sensorList.put(count,blePeripheral);
+                sensorList.get(count).setSerial(bluetoothDevice.getName());
             }
             count = count + 1;
 
@@ -310,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,BluetoothAdapter.ERROR);
                 switch(state){
                     case BluetoothAdapter.STATE_OFF:
-                        inizializzaBluetooth();
+                        //initBluetooth();
                         break;
                     case BluetoothAdapter.STATE_TURNING_OFF:
                         break;

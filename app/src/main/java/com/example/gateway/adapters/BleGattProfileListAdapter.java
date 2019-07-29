@@ -24,19 +24,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static android.content.ContentValues.TAG;
-
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 
 public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
     private final static String TAG = BleGattProfileListAdapter.class.getSimpleName();
     private ArrayList<BlePeripheralListItem> mBluetoothPeripheralListItems = new ArrayList<BlePeripheralListItem>(); // list of Peripherals
-    private Map<Integer,ArrayList<DeviceConfig>> mDeviceConfig = new HashMap<Integer, ArrayList<DeviceConfig>>();
-    private DeviceConfig options;
+    private Map<Integer,ArrayList<PeripheralConfig>> mDeviceConfig = new HashMap<Integer, ArrayList<PeripheralConfig>>();
+    private PeripheralConfig options;
     private Context context;
 
-    public BleGattProfileListAdapter(Map<Integer, BlePeripheral> listaSensori, Context context) {
-        this.listaSensori = listaSensori;
+    public BleGattProfileListAdapter(Map<Integer, BlePeripheral> sensorList, Context context) {
+        this.sensorList = sensorList;
         this.context = context;
     }
 
@@ -49,9 +47,9 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         //Metto un oggetto figlio fittizio dentro a ogni BleperipheralListItem
         //Ogni gruppo avrà sempre e solo 1 figlio
         Object o = new Object();
-        mDeviceConfig.put(listItemId, new ArrayList<DeviceConfig>());
+        mDeviceConfig.put(listItemId, new ArrayList<PeripheralConfig>());
         int idOptions = mDeviceConfig.size();
-        DeviceConfig d = new DeviceConfig(idOptions, o);
+        PeripheralConfig d = new PeripheralConfig(idOptions, o);
         mDeviceConfig.get(listItemId).add(d);
     }
 
@@ -130,8 +128,8 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             peripheralListItemView.deviceMac.setText(item.getDeviceMac());
         }
 
-        if(listaSensori.get(groupPosition).getVistaPadre() == null) {
-            listaSensori.get(groupPosition).setVistaPadre(peripheralListItemView);
+        if(sensorList.get(groupPosition).getGroupView() == null) {
+            sensorList.get(groupPosition).setGroupView(peripheralListItemView);
         }
         return	v;
     }
@@ -163,16 +161,19 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
 
     public static class ChildViewHolder{
         public Button connect;
-        //public View progressSpinner;
         public Button disconnect;
         public Button options;
         public ImageView statusLed;
         public ImageView wearLed;
+        public ImageView bt;
+        public TextView battery;
         public ProgressBar charge;
-        public EditText editThreshold;
-        public Button sendThreshold;
-        public Button offlineRecording;
-        public Button streamRecording;
+        public EditText editThresholdProbability;
+        public EditText editThresholdInterest;
+        public EditText editThresholdWear;
+        public Button sendThresholdProbability;
+        public Button sendThresholdInterest;
+        public Button sendThresholdWear;
     }
     @Override
     public View getChildView(final int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
@@ -184,16 +185,19 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
 
             holder = new ChildViewHolder();
             holder.connect = (Button)v.findViewById(R.id.connect);
-            //holder.progressSpinner = (View)v.findFocus(R.id.scan_progress_item);
             holder.disconnect = (Button)v.findViewById(R.id.disconnect);
             holder.options = (Button)v.findViewById(R.id.options);
             holder.statusLed = (ImageView)v.findViewById(R.id.status);
             holder.wearLed = (ImageView)v.findViewById(R.id.wear_led);
+            holder.bt = (ImageView) v.findViewById(R.id.bt);
+            holder.battery = (TextView) v.findViewById(R.id.battery);
             holder.charge = (ProgressBar) v.findViewById(R.id.charge);
-            holder.editThreshold = (EditText)v.findViewById(R.id.editThreshold);
-            holder.sendThreshold = (Button)v.findViewById(R.id.send_threshold);
-            holder.offlineRecording = (Button)v.findViewById(R.id.offline_recording);
-            holder.streamRecording = (Button)v.findViewById(R.id.stream_recording);
+            holder.editThresholdProbability = (EditText)v.findViewById(R.id.editProbabilityThreshold);
+            holder.sendThresholdProbability = (Button)v.findViewById(R.id.send_probabilitythreshold);
+            holder.editThresholdInterest = (EditText)v.findViewById(R.id.editInterestThreshold);
+            holder.sendThresholdInterest = (Button)v.findViewById(R.id.send_interestthreshold);
+            holder.editThresholdWear = (EditText)v.findViewById(R.id.editWearThreshold);
+            holder.sendThresholdWear = (Button)v.findViewById(R.id.send_wearthreshold);
             Drawable d = context.getDrawable(R.drawable.progress);
             holder.charge.setProgressDrawable(d);
             v.setTag(holder);
@@ -205,9 +209,10 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             @Override
             public void onClick(View v) {
                 try {
-                    listaSensori.get(groupPosition).connect(listaSensori.get(groupPosition).context);
+                    sensorList.get(groupPosition).connect(sensorList.get(groupPosition).context);
                 } catch (Exception e){
                     Log.e(TAG,"Error connecting to peripheral");
+                    e.printStackTrace();
                 }
             }
         });
@@ -215,7 +220,7 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             @Override
             public void onClick(View v) {
                 try {
-                    listaSensori.get(groupPosition).disconnect();
+                    sensorList.get(groupPosition).disconnect();
                 } catch (Exception e){
                     Log.e(TAG,"Error disconnecting to peripheral");
                 }
@@ -224,34 +229,47 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         holder.options.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                sensorList.get(groupPosition).prova();
             }
         });
-        holder.sendThreshold.setOnClickListener(new View.OnClickListener() {
+        holder.sendThresholdProbability.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int percentage = Integer.parseInt(holder.editThreshold.getText().toString());
+                int percentage = Integer.parseInt(holder.editThresholdProbability.getText().toString());
                 if(percentage<=100 && percentage >=0) {
-                    listaSensori.get(groupPosition).updateThreshold(percentage);
+                    Toast.makeText(context, "NEW PERCENTAGE = "+ percentage, Toast.LENGTH_SHORT).show();
+                    sensorList.get(groupPosition).updateThresholdProbability(percentage);
                 }else {
-                    Toast.makeText(context, "Inserire un numero tra 0 e 100", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Inserire un numero tra 0 e ?100", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-        holder.offlineRecording.setOnClickListener(new View.OnClickListener() {
+        holder.sendThresholdInterest.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listaSensori.get(groupPosition).startOfflineRecording();
+                float percentage = Float.parseFloat(holder.editThresholdInterest.getText().toString());
+                if(percentage<=100000 && percentage >=0) {
+                    sensorList.get(groupPosition).updateThresholdInterest(percentage);
+                }else {
+                    Toast.makeText(context, "Inserire un numero tra 0 e 100000", Toast.LENGTH_SHORT).show();
+                }
             }
         });
-        holder.streamRecording.setOnClickListener(new View.OnClickListener() {
+        holder.sendThresholdWear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listaSensori.get(groupPosition).startStreamRecording();
+                float percentage = Float.parseFloat(holder.editThresholdWear.getText().toString());
+                if(percentage<=100000 && percentage >=0) {
+                    Toast.makeText(context, "NEW PERCENTAGE = "+ percentage, Toast.LENGTH_SHORT).show();
+                    sensorList.get(groupPosition).updateThresholdWear(percentage);
+                }else {
+                    Toast.makeText(context, "Inserire un numero tra 0 e 100000", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
-        if(listaSensori.get(groupPosition).getVistaFiglia() == null) {
-            listaSensori.get(groupPosition).setVistaFiglia(holder);
+        if(sensorList.get(groupPosition).getChildView() == null) {
+            sensorList.get(groupPosition).setChildView(holder);
         }
 
         return v;
@@ -264,5 +282,5 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         return listView.getChildAt(flatPosition - first);
     }
 
-    public Map<Integer, BlePeripheral> listaSensori;
+    public Map<Integer, BlePeripheral> sensorList;
 }

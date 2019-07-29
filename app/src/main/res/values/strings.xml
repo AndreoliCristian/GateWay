@@ -19,7 +19,9 @@
     <string name="battery_charge">BATTERY CHARGE</string>
     <string name="STATUS">STATUS</string>
     <string name="WEAR">WEAR</string>
-    <string name="THRESHOLD">THRESHOLD</string>
+    <string name="THRESHOLDPROBABILITY">THRESHOLDPROBABILITY</string>
+    <string name="THRESHOLDWEAR">THRESHOLDWEAR</string>
+    <string name="THRESHOLDINTEREST">THRESHOLDINTEREST</string>
     <string name="SEND">SEND</string>
     <string name="OFFREC">OFFLINERECORDING</string>
     <string name="STREAMREC">STREAMRECORDING</string>
