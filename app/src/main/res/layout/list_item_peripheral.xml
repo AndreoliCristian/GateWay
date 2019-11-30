@@ -5,7 +5,7 @@
     android:orientation="horizontal"	>
     <LinearLayout
         android:orientation="vertical"
-        android:layout_height="50dp"
+        android:layout_height="60dp"
         android:layout_width="wrap_content"
         android:layout_weight="2">
         <TextView
@@ -24,7 +24,7 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:layout_height="60dp"
         android:layout_weight="2"
         android:orientation="vertical">
 
@@ -45,7 +45,7 @@
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:layout_height="60dp"
         android:layout_weight="2">
         <TextView
             android:id="@+id/etichetta_indossato"
@@ -63,7 +63,7 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:layout_height="60dp"
         android:layout_weight="2"
         android:orientation="vertical">
 
@@ -73,25 +73,5 @@
             android:layout_height="match_parent"
             android:background="@android:color/transparent"
             android:src="@mipmap/battery_charge_25" />
-    </LinearLayout>
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="wrap_content"
-        android:layout_height="50dp"
-        android:layout_weight="2">
-        <TextView
-            android:id="@+id/etichetta_fall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:paddingTop="@dimen/text_padding"
-            android:text="@string/Fall"/>
-        <TextView
-            android:id="@+id/fall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:paddingTop="@dimen/text_padding"
-            android:text="@string/Percentuale"/>
     </LinearLayout>
 </LinearLayout>

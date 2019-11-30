@@ -9,9 +9,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StrictMode;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -19,21 +22,28 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.WindowManager;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.example.gateway.adapters.BleGattProfileListAdapter;
 import com.example.gateway.ble.BleCommManager;
 import com.example.gateway.ble.BlePeripheral;
+import com.example.gateway.ble.GateWayConfig;
 import com.example.gateway.ble.callbacks.BleScanCallbackv18;
 import com.example.gateway.ble.callbacks.BleScanCallbackv21;
 import com.example.gateway.models.BlePeripheralListItem;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 
@@ -44,12 +54,18 @@ public class MainActivity extends AppCompatActivity {
     private final static int REQUEST_ENABLE_BT = 1;
     private String[] list_of_permissions = new String[] {
             Manifest.permission.BLUETOOTH,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.WAKE_LOCK,
+            Manifest.permission.CAMERA,
             Manifest.permission.BLUETOOTH_ADMIN,
             Manifest.permission.ACCESS_FINE_LOCATION
     };
     private BleCommManager mBleCommManager;
     private	boolean	mScanningActive	= false;
 
+    private	MenuItem GWID;
     private	MenuItem mScanProgressSpinner;
     private	MenuItem mStartScanItem, mStopScanItem;
     private ExpandableListView mBlePeripheralsListView;
@@ -61,13 +77,13 @@ public class MainActivity extends AppCompatActivity {
     private int count;
     Activity a;
 
+    private ExpandableListView log;
+
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         this.setFinishOnTouchOutside(false);
-
-        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
-        //getWindow().setFlags(WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH);
         setContentView(R.layout.activity_main);
 
         checkPermissions();
@@ -75,20 +91,13 @@ public class MainActivity extends AppCompatActivity {
         db = new DBManager(this);
         db.open();
         a = MainActivity.this;
-    }
 
-    /*@Override
-    public boolean onTouchEvent(MotionEvent event) {
-        // If we've received a touch notification that the user has touched
-        // outside the app, finish the activity.
-        if (MotionEvent.ACTION_OUTSIDE == event.getAction()) {
-            //finish();
-            return false;
+        if (android.os.Build.VERSION.SDK_INT > 9)
+        {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
         }
-
-        // Delegate everything else to Activity.
-        return false;
-    }*/
+    }
 
     private void initUI(){
         mPeripheralsListEmptyTV = (TextView)findViewById(R.id.peripheral_list_empty);
@@ -102,6 +111,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         initBluetooth();
+        configInitialization();
+    }
+
+    private void writeToFile(File file, String data) {
+        data = data.trim();
+        try {
+            PrintWriter p = new PrintWriter(new FileOutputStream(file, true));
+            p.println(data);
+            p.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -124,6 +145,9 @@ public class MainActivity extends AppCompatActivity {
         //	Inflate	the	menu;
         //	this	adds	items	to	the	action	bar	if	it	is	present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        GWID = menu.findItem(R.id.GWID);
+        GWID.setVisible(true);
+        GWID.setTitle(GateWayConfig.GateWay);
         mStartScanItem = menu.findItem(R.id.action_start_scan);
         mStopScanItem =	 menu.findItem(R.id.action_stop_scan);
         mStopScanItem.setVisible(false);
@@ -242,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
                 BlePeripheral blePeripheral = new BlePeripheral(disposit.get(count), getApplicationContext(), db, a);
                 blePeripheral.setDeviceId(count);
                 sensorList.put(count,blePeripheral);
-                sensorList.get(count).setSerial(bluetoothDevice.getName());
+                sensorList.get(count).setSensorTile(bluetoothDevice.getName());
             }
             count = count + 1;
 
@@ -347,6 +371,93 @@ public class MainActivity extends AppCompatActivity {
 
         }
     };
+
+    private void configInitialization(){
+        File folder = new File(Environment.getExternalStorageDirectory().getPath() + File.separator + "GateWayConfig");
+        Log.e(TAG,"DIRECTORY = "+folder.mkdir()+"___"+folder);
+        File filePointer = new File(folder + File.separator + "GWConfig.txt");
+
+        try {
+            if (!filePointer.exists()) {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(filePointer, true));
+                writer.append(GateWayConfig.cloudAddress+"\n");
+                writer.append("type_Connected="+GateWayConfig.type_Connected+"\n");
+                writer.append("type_Disconnected="+GateWayConfig.type_Disconnected+"\n");
+                writer.append("type_Battery="+GateWayConfig.type_Battery+"\n");
+                writer.append("type_Fall="+GateWayConfig.type_Fall+"\n");
+                writer.append("type_Warning="+GateWayConfig.type_Warning+"\n");
+                writer.append("type_Wear="+GateWayConfig.type_Wear+"\n");
+                writer.append("type_Error="+GateWayConfig.type_Error+"\n");
+                writer.append("Battery_Service_UUID="+GateWayConfig.Battery_Service_UUID+"\n");
+                writer.append("Battery_Level_UUID="+GateWayConfig.Battery_Level_UUID+"\n");
+                writer.append("FallDetection_Service_UUID="+GateWayConfig.FallDetection_Service_UUID+"\n");
+                writer.append("FallProbability_UUID="+GateWayConfig.FallProbability_UUID+"\n");
+                writer.append("WarningProbability_UUID="+GateWayConfig.WarningProbability_UUID+"\n");
+                writer.append("ThresholdsProbability_UUID="+GateWayConfig.ThresholdsProbability_UUID+"\n");
+                writer.append("ThresholdsWear_UUID="+GateWayConfig.ThresholdsWear_UUID+"\n");
+                writer.append("Status_UUID="+GateWayConfig.Status_UUID+"\n");
+                writer.append("GateWay="+GateWayConfig.GateWay+"\n");
+                writer.close();
+            }else {
+                String str;
+                String[] tokens;
+                BufferedReader br = new BufferedReader(new FileReader(filePointer));
+
+                GateWayConfig.cloudAddress = br.readLine();
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Connected = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Disconnected = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Battery = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Fall = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Warning = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Wear = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.type_Error = Integer.parseInt(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.Battery_Service_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.Battery_Level_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.FallDetection_Service_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.FallProbability_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.WarningProbability_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.ThresholdsProbability_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.ThresholdsWear_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.Status_UUID = UUID.fromString(tokens[1]);
+                str = br.readLine();
+                tokens = str.split("=");
+                GateWayConfig.GateWay = tokens[1];
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private void checkPermissions() {
         int result;

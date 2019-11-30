@@ -151,6 +151,19 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginLeft="32dp"
+            android:paddingTop="@dimen/text_padding"
+            android:text="@string/Percentuale"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/battery_charge"
+            app:layout_constraintTop_toTopOf="parent" />
     </android.support.constraint.ConstraintLayout>
 
     <LinearLayout
@@ -198,8 +211,8 @@
             android:inputType="textPersonName"
             android:text="100"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/guideline1"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/send_probabilitythreshold"/>
 
         <Button
             android:id="@+id/send_probabilitythreshold"
@@ -210,7 +223,7 @@
             android:enabled="false"
             android:text="@string/SEND"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/editProbabilityThreshold"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <android.support.constraint.Guideline
@@ -252,7 +265,7 @@
             android:inputType="textPersonName"
             android:text="100"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/guideline2"
+            app:layout_constraintEnd_toStartOf="@id/send_wearthreshold"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
@@ -264,7 +277,7 @@
             android:enabled="false"
             android:text="@string/SEND"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/editWearThreshold"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <android.support.constraint.Guideline
@@ -306,7 +319,7 @@
             android:inputType="textPersonName"
             android:text="100"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/guideline3"
+            app:layout_constraintEnd_toStartOf="@id/send_interestthreshold"
             app:layout_constraintTop_toTopOf="parent" />
 
         <Button
@@ -318,7 +331,7 @@
             android:enabled="false"
             android:text="@string/SEND"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/editInterestThreshold"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <android.support.constraint.Guideline
@@ -328,4 +341,62 @@
             android:orientation="vertical"
             app:layout_constraintGuide_begin="152dp" />
     </android.support.constraint.ConstraintLayout>
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#D3D3D3"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/wear-on"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="@string/wearon"/>
+        <Button
+            android:id="@+id/wear-off"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="@string/wearoff"/>
+        <Button
+            android:id="@+id/error50"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="@string/error50"/>
+    </LinearLayout>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#D3D3D3"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/warning-50"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="@string/warning50"/>
+        <Button
+            android:id="@+id/battery-50"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="@string/battery50"/>
+        <Button
+            android:id="@+id/fall-50"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:text="@string/fall50"/>
+        <EditText
+            android:id="@+id/edit_debug"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="textPersonName"
+            android:text="100"/>
+    </LinearLayout>
 </LinearLayout>

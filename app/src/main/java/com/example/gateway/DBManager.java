@@ -12,7 +12,7 @@ import java.util.Calendar;
 
 public class DBManager {
 
-    static final String KEY_SERIAL = "serial";
+    static final String KEY_SERIAL = "SensorTile";
     static final String KEY_GATEWAY = "gateway";
     static final String KEY_DATE = "date";
     static final String KEY_TYPE = "type";
@@ -23,7 +23,7 @@ public class DBManager {
     static final String DATABASE_TABLE = "events";
     static final int DATABASE_VERSIONE = 2;
 
-    static final String DATABASE_CREATION = "CREATE TABLE " + DATABASE_TABLE + " (date text, serial text not null, gateway text not null, type integer, value text);";
+    static final String DATABASE_CREATION = "CREATE TABLE " + DATABASE_TABLE + " (date text, SensorTile text not null, gateway text not null, type integer, value text);";
 
     final Context context;
     DatabaseHelper DBHelper;
@@ -66,7 +66,7 @@ public class DBManager {
         DBHelper.close();
     }
 
-    public long putEvent(String serial, String gateway, int type, String value){
+    public long putEvent(String SensorTile, String gateway, int type, String value){
 
         Calendar now = Calendar.getInstance();
         SimpleDateFormat formatter = new SimpleDateFormat("E yyyy.MM.dd 'at' hh:mm:ss a zzz");
@@ -75,7 +75,7 @@ public class DBManager {
 
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_DATE, date);
-        initialValues.put(KEY_SERIAL, serial);
+        initialValues.put(KEY_SERIAL, SensorTile);
         initialValues.put(KEY_GATEWAY, gateway);
         initialValues.put(KEY_TYPE, type);
         initialValues.put(KEY_VALUE, value);

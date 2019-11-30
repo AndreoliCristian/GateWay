@@ -24,5 +24,12 @@
     <string name="THRESHOLDINTEREST">THRESHOLDINTEREST</string>
     <string name="SEND">SEND</string>
     <string name="OFFREC">OFFLINERECORDING</string>
-    <string name="STREAMREC">STREAMRECORDING</string>
+    <string name="wearon">W-on</string>
+    <string name="wearoff">W-off</string>
+    <string name="fall50">fall</string>
+    <string name="warning50">war</string>
+    <string name="battery50">batt</string>
+    <string name="LOGGER">LOGGER</string>
+    <string name="error50">err</string>
+    <string name="cloud_address">http://ec2-34-249-10-102.eu-west-1.compute.amazonaws.com:100/</string>
 </resources>

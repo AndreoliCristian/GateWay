@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.example.gateway.R;
 import com.example.gateway.ble.BlePeripheral;
+import com.example.gateway.ble.GateWayConfig;
 import com.example.gateway.models.BlePeripheralListItem;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,8 +86,6 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         public ImageView battery;
         public TextView etichetta_indossato;
         public ImageView indossato;
-        public TextView etichetta_fall;
-        public TextView fall;
     }
 
     @Override
@@ -109,8 +108,6 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             peripheralListItemView.connection_Status = (ImageView)v.findViewById(R.id.status);
             peripheralListItemView.etichetta_indossato = (TextView)v.findViewById(R.id.etichetta_indossato);
             peripheralListItemView.indossato = (ImageView)v.findViewById(R.id.indossato);
-            peripheralListItemView.etichetta_fall = (TextView)v.findViewById(R.id.etichetta_fall);
-            peripheralListItemView.fall = (TextView)v.findViewById(R.id.fall);
             v.setTag(peripheralListItemView);
         }
         else{
@@ -128,8 +125,8 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             peripheralListItemView.deviceMac.setText(item.getDeviceMac());
         }
 
-        if(sensorList.get(groupPosition).getGroupView() == null) {
-            sensorList.get(groupPosition).setGroupView(peripheralListItemView);
+        if(sensorList.get(groupPosition).peripheralUIHandler.groupView == null) {
+            sensorList.get(groupPosition).peripheralUIHandler.groupView = peripheralListItemView;
         }
         return	v;
     }
@@ -167,13 +164,21 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
         public ImageView wearLed;
         public ImageView bt;
         public TextView battery;
+        public TextView percentuale;
         public ProgressBar charge;
         public EditText editThresholdProbability;
         public EditText editThresholdInterest;
         public EditText editThresholdWear;
+        public EditText editdebug;
         public Button sendThresholdProbability;
         public Button sendThresholdInterest;
         public Button sendThresholdWear;
+        public Button wearon;
+        public Button wearoff;
+        public Button fall50;
+        public Button warning50;
+        public Button battery50;
+        public Button error50;
     }
     @Override
     public View getChildView(final int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
@@ -191,13 +196,23 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             holder.wearLed = (ImageView)v.findViewById(R.id.wear_led);
             holder.bt = (ImageView) v.findViewById(R.id.bt);
             holder.battery = (TextView) v.findViewById(R.id.battery);
+            holder.percentuale = (TextView) v.findViewById(R.id.percent);
             holder.charge = (ProgressBar) v.findViewById(R.id.charge);
             holder.editThresholdProbability = (EditText)v.findViewById(R.id.editProbabilityThreshold);
             holder.sendThresholdProbability = (Button)v.findViewById(R.id.send_probabilitythreshold);
             holder.editThresholdInterest = (EditText)v.findViewById(R.id.editInterestThreshold);
+            holder.editdebug = (EditText)v.findViewById(R.id.edit_debug);
             holder.sendThresholdInterest = (Button)v.findViewById(R.id.send_interestthreshold);
             holder.editThresholdWear = (EditText)v.findViewById(R.id.editWearThreshold);
             holder.sendThresholdWear = (Button)v.findViewById(R.id.send_wearthreshold);
+
+            holder.wearon = (Button)v.findViewById(R.id.wear_on);
+            holder.wearoff = (Button)v.findViewById(R.id.wear_off);
+            holder.fall50 = (Button)v.findViewById(R.id.fall_50);
+            holder.warning50 = (Button)v.findViewById(R.id.warning_50);
+            holder.battery50 = (Button)v.findViewById(R.id.battery_50);
+            holder.error50 = (Button)v.findViewById(R.id.error50);
+
             Drawable d = context.getDrawable(R.drawable.progress);
             holder.charge.setProgressDrawable(d);
             v.setTag(holder);
@@ -236,6 +251,7 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             @Override
             public void onClick(View v) {
                 int percentage = Integer.parseInt(holder.editThresholdProbability.getText().toString());
+                Log.e(TAG,"nnnnnn "+percentage);
                 if(percentage<=100 && percentage >=0) {
                     Toast.makeText(context, "NEW PERCENTAGE = "+ percentage, Toast.LENGTH_SHORT).show();
                     sensorList.get(groupPosition).updateThresholdProbability(percentage);
@@ -249,6 +265,7 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
             public void onClick(View v) {
                 float percentage = Float.parseFloat(holder.editThresholdInterest.getText().toString());
                 if(percentage<=100000 && percentage >=0) {
+                    Toast.makeText(context, "NEW PERCENTAGE = "+ percentage, Toast.LENGTH_SHORT).show();
                     sensorList.get(groupPosition).updateThresholdInterest(percentage);
                 }else {
                     Toast.makeText(context, "Inserire un numero tra 0 e 100000", Toast.LENGTH_SHORT).show();
@@ -267,9 +284,57 @@ public class BleGattProfileListAdapter  extends BaseExpandableListAdapter {
                 }
             }
         });
+        holder.wearon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sensorList.get(groupPosition).sendJson(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Wear, "true");
+                sensorList.get(groupPosition).peripheralUIHandler.updateLogger("ST " + sensorList.get(groupPosition).SensorTile +" WEAR = true");
+            }
+        });
+        holder.wearoff.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sensorList.get(groupPosition).sendJson(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Wear, "false");
+                sensorList.get(groupPosition).peripheralUIHandler.updateLogger("ST " + sensorList.get(groupPosition).SensorTile +" WEAR = false");
+            }
+        });
+        holder.fall50.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                float percentage = Float.parseFloat(holder.editdebug.getText().toString());
+                sensorList.get(groupPosition).sendJson(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Fall, String.valueOf(percentage));
+                sensorList.get(groupPosition).db.putEvent(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Fall, String.valueOf(percentage));
+                sensorList.get(groupPosition).peripheralUIHandler.updateLogger("ST " + sensorList.get(groupPosition).SensorTile +" FALL = " + percentage);
+            }
+        });
+        holder.warning50.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                float percentage = Float.parseFloat(holder.editdebug.getText().toString());
+                sensorList.get(groupPosition).sendJson(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Warning, String.valueOf(percentage));
+                sensorList.get(groupPosition).db.putEvent(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Warning, String.valueOf(percentage));
+                sensorList.get(groupPosition).peripheralUIHandler.updateLogger("ST " + sensorList.get(groupPosition).SensorTile +" WARNING = " + percentage);
+            }
+        });
+        holder.battery50.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                float percentage = Float.parseFloat(holder.editdebug.getText().toString());
+                sensorList.get(groupPosition).sendJson(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Battery, String.valueOf(percentage));
+                sensorList.get(groupPosition).db.putEvent(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.type_Battery, String.valueOf(percentage));
+                sensorList.get(groupPosition).peripheralUIHandler.updateLogger("ST " + sensorList.get(groupPosition).SensorTile +" BATTERY = " + percentage);
+            }
+        });
+        holder.error50.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sensorList.get(groupPosition).sendJson(sensorList.get(groupPosition).SensorTile, GateWayConfig.GateWay, GateWayConfig.errorBit, "true");
+                sensorList.get(groupPosition).peripheralUIHandler.updateLogger("ST " + sensorList.get(groupPosition).SensorTile +" ERROR = true");
+            }
+        });
 
-        if(sensorList.get(groupPosition).getChildView() == null) {
-            sensorList.get(groupPosition).setChildView(holder);
+        if(sensorList.get(groupPosition).peripheralUIHandler.childView == null) {
+            sensorList.get(groupPosition).peripheralUIHandler.childView = holder;
         }
 
         return v;
